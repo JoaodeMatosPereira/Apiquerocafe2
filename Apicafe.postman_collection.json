@@ -1,0 +1,96 @@
+{
+  "info": {
+    "name": "Apicafe - CRUD Cafés",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Listar cafés",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5162/api/cafes",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5162",
+          "path": ["api", "cafes"]
+        }
+      }
+    },
+    {
+      "name": "Buscar por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5162/api/cafes/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5162",
+          "path": ["api", "cafes", "1"]
+        }
+      }
+    },
+    {
+      "name": "Criar café",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"marca\": \"Melitta\",\n  \"volume\": 500,\n  \"tipo\": \"Filtrado\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5162/api/cafes",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5162",
+          "path": ["api", "cafes"]
+        }
+      }
+    },
+    {
+      "name": "Atualizar café",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"marca\": \"Pilão\",\n  \"volume\": 250,\n  \"tipo\": \"Espresso\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5162/api/cafes/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5162",
+          "path": ["api", "cafes", "1"]
+        }
+      }
+    },
+    {
+      "name": "Excluir café",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5162/api/cafes/1",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5162",
+          "path": ["api", "cafes", "1"]
+        }
+      }
+    }
+  ]
+}

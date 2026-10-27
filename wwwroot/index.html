@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Cafés - CRUD</title>
+  <style>
+    :root {
+      --bg: #1a120b;
+      --card: #2c1e14;
+      --accent: #c17f3a;
+      --accent-hover: #d4924a;
+      --text: #f5e6d3;
+      --muted: #a89078;
+      --danger: #c45c4a;
+      --success: #6b8f71;
+      --border: #3d2b1f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 {
+      text-align: center;
+      margin-bottom: 0.25rem;
+      font-size: 1.8rem;
+      color: var(--accent);
+    }
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    h2 { font-size: 1.15rem; margin-bottom: 1rem; color: var(--accent); }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 0.75rem;
+      align-items: end;
+    }
+    @media (max-width: 700px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    button {
+      padding: 0.65rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #1a120b; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { opacity: 0.9; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: #4a382c; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.75rem 0.6rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--muted); font-size: 0.8rem; font-weight: 600; }
+    tr:hover td { background: rgba(193, 127, 58, 0.08); }
+    .actions { display: flex; gap: 0.4rem; }
+    .actions button { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem;
+    }
+    .msg {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .msg.ok { background: rgba(107, 143, 113, 0.2); color: var(--success); display: block; }
+    .msg.err { background: rgba(196, 92, 74, 0.2); color: var(--danger); display: block; }
+    #editId { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>☕ API de Cafés</h1>
+    <p class="subtitle">CRUD com Entity Framework Core + SQLite</p>
+
+    <div id="msg" class="msg"></div>
+
+    <div class="card">
+      <h2 id="formTitle">Cadastrar café</h2>
+      <form id="form" class="form-grid">
+        <input type="hidden" id="editId">
+        <div>
+          <label for="marca">Marca</label>
+          <input type="text" id="marca" required placeholder="Ex: Melitta">
+        </div>
+        <div>
+          <label for="volume">Volume (ml)</label>
+          <input type="number" id="volume" required min="1" placeholder="Ex: 500">
+        </div>
+        <div>
+          <label for="tipo">Tipo</label>
+          <select id="tipo" required>
+            <option value="">Selecione</option>
+            <option value="Espresso">Espresso</option>
+            <option value="Filtrado">Filtrado</option>
+            <option value="Cappuccino">Cappuccino</option>
+            <option value="Latte">Latte</option>
+            <option value="Mocha">Mocha</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+          <button type="submit" class="btn-primary" id="btnSubmit">Salvar</button>
+          <button type="button" class="btn-secondary" id="btnCancel" style="display:none;" onclick="cancelEdit()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Lista de cafés</h2>
+      <div id="lista">
+        <p class="empty">Carregando...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api/cafes';
+
+    function showMsg(text, ok = true) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = 'msg ' + (ok ? 'ok' : 'err');
+      setTimeout(() => el.className = 'msg', 3000);
+    }
+
+    async function carregar() {
+      try {
+        const res = await fetch(API);
+        const dados = await res.json();
+        const container = document.getElementById('lista');
+        if (!dados.length) {
+          container.innerHTML = '<p class="empty">Nenhum café cadastrado.</p>';
+          return;
+        }
+        container.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Marca</th>
+                <th>Volume</th>
+                <th>Tipo</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dados.map(c => `
+                <tr>
+                  <td>${c.id}</td>
+                  <td>${c.marca}</td>
+                  <td>${c.volume} ml</td>
+                  <td>${c.tipo}</td>
+                  <td class="actions">
+                    <button class="btn-secondary" onclick='editar(${JSON.stringify(c)})'>Editar</button>
+                    <button class="btn-danger" onclick="excluir(${c.id})">Excluir</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (e) {
+        document.getElementById('lista').innerHTML = '<p class="empty">Erro ao carregar.</p>';
+        showMsg('Falha ao listar cafés', false);
+      }
+    }
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('editId').value;
+      const body = {
+        marca: document.getElementById('marca').value.trim(),
+        volume: parseInt(document.getElementById('volume').value, 10),
+        tipo: document.getElementById('tipo').value
+      };
+
+      try {
+        let res;
+        if (id) {
+          res = await fetch(`${API}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        } else {
+          res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        }
+
+        if (!res.ok) throw new Error('Falha na operação');
+        showMsg(id ? 'Café atualizado!' : 'Café cadastrado!');
+        cancelEdit();
+        carregar();
+      } catch {
+        showMsg('Erro ao salvar', false);
+      }
+    });
+
+    function editar(c) {
+      document.getElementById('editId').value = c.id;
+      document.getElementById('marca').value = c.marca;
+      document.getElementById('volume').value = c.volume;
+      document.getElementById('tipo').value = c.tipo;
+      document.getElementById('formTitle').textContent = 'Editar café #' + c.id;
+      document.getElementById('btnSubmit').textContent = 'Atualizar';
+      document.getElementById('btnCancel').style.display = 'inline-block';
+    }
+
+    function cancelEdit() {
+      document.getElementById('editId').value = '';
+      document.getElementById('form').reset();
+      document.getElementById('formTitle').textContent = 'Cadastrar café';
+      document.getElementById('btnSubmit').textContent = 'Salvar';
+      document.getElementById('btnCancel').style.display = 'none';
+    }
+
+    async function excluir(id) {
+      if (!confirm('Excluir este café?')) return;
+      try {
+        const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+        if (res.status === 204 || res.ok) {
+          showMsg('Café excluído');
+          carregar();
+        } else {
+          showMsg('Erro ao excluir', false);
+        }
+      } catch {
+        showMsg('Erro ao excluir', false);
+      }
+    }
+
+    carregar();
+  </script>
+</body>
+</html>
